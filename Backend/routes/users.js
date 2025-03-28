@@ -47,17 +47,17 @@ router.get('/:id', async function(req, res, next) {
     const db = client.db('wts');
     
     let user = null;
-    user = await db.collection("user").findOne({ "_id": new ObjectId(id) });
+    user = await db.collection("user").findOne({ "Phone Number": id });
     
-    // 2. 如果通過ID未找到用戶，嘗試用電話號碼查詢
-    if (!user) {
+    if (!user && !isNaN(id)) {
       const phoneNoNum = Number(id);
       user = await db.collection("user").findOne({ "Phone Number": phoneNoNum });
     }
-
+      
     res.json({ success: true, data: user });
 
   } catch (error) {
+    console.error('獲取用戶資料錯誤:', error);
     res.status(500).json({ 
       success: false, 
       message: '獲取用戶資料錯誤: ' + error.message 
@@ -114,12 +114,6 @@ router.put('/:phoneNo', async function(req, res, next) {
         console.log(`not a valid field: ${standardField}`);
       }
     }
-    
-  
-    let result = await db.collection("user").updateOne(
-      { _id: user._id },
-      { $set: updateFields }
-    );
     
     res.json({ success: true, message: '用戶資料已成功更新' });
   } catch (error) {
