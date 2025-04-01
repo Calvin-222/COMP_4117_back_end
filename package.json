@@ -19,9 +19,7 @@
     "lint-staged": "^15.5.0",
     "mongodb": "^6.15.0",
     "morgan": "~1.9.1",
-    "prettier": "^3.5.3",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "prettier": "^3.5.3"
   },
   "devDependencies": {
     "boxen": "^5.1.2",

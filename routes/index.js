@@ -22,110 +22,6 @@ router.get("/webhook", (req, res) => {
   }
 });
 
-// router.post('/webhook', (req, res) => {
-//   const { entry } = req.body;
-
-//   try {
-//       entry.forEach(item => {
-//           const messageObj = item.changes[0].value.messages[0];
-
-//           const textBody = messageObj.text.body;
-//           const sender = messageObj.from;
-//           const timestamp = messageObj.timestamp;
-
-//           console.log("訊息內容:", textBody);
-//           console.log("發送者:", sender);
-//           console.log("時間戳記:", timestamp);
-
-//       });
-//   } catch (error) {
-//       console.error("處理訊息時出錯:", error);
-//   }
-
-//   console.log(JSON.stringify(req.body, null, 2));
-//   res.status(200).send('ok');
-// });
-
-// router.post("/webhook", async (req, res) => {
-//   const { entry } = req.body;
-//   let client;
-
-//   try {
-//     client = await connectToDB();
-//     const db = client.db("wts");
-
-//     // 處理每個訊息
-//     for (const item of entry) {
-//       try {
-//         const messageObj = item.changes[0].value.messages[0];
-
-//         // 提取訊息資訊
-//         const textBody = messageObj.text.body;
-//         const sender = messageObj.from;
-
-//         console.log("訊息內容:", textBody);
-//         console.log("發送者:", sender);
-//         console.log("時間戳記:", timestamp);
-
-//         // 格式化日期時間 (從 UNIX 時間戳轉換為 YYYY-MM-DD HH:MM:SS)
-//         const date = new Date(parseInt(timestamp) * 1000);
-//         const formattedDateTime = date
-//           .toISOString()
-//           .replace("T", " ")
-//           .substring(0, 19);
-
-//         // 從聯絡人資訊中找出發送者名稱 (如果有)
-//         let senderName = sender;
-
-//         if (
-//           item.changes[0].value.contacts &&
-//           item.changes[0].value.contacts.length > 0
-//         ) {
-//           const contact = item.changes[0].value.contacts[0];
-//           if (contact.profile && contact.profile.name) {
-//             senderName = contact.profile.name;
-//           }
-//         }
-
-//         // 轉換電話號碼格式 (移除國碼前綴)
-//         let phoneNumber = sender;
-//         if (phoneNumber.startsWith("852")) {
-//           phoneNumber = phoneNumber.substring(3);
-//         }
-
-//         // 創建資料庫記錄
-//         const messageRecord = {
-//           PHONE_NO: Number(phoneNumber),
-//           SENDER: senderName,
-//           RECEIVER: "浸會大學 SEE - 西貢/將軍澳社區",
-//           MESSAGE_TYPE: "R", // R 表示接收到的訊息
-//           MESSAGE_TEXT: textBody,
-//           MESSAGE_DATETIME: formattedDateTime,
-//           REF_IMPORT_FILE_NAME: "WhatsApp Webhook",
-//         };
-
-//         // 儲存到資料庫
-//         const result = await db
-//           .collection("chatHistory")
-//           .insertOne(messageRecord);
-//         console.log("訊息已保存到資料庫，ID:", result.insertedId);
-//       } catch (error) {
-//         console.error("處理單一訊息時出錯:", error);
-//       }
-//     }
-//   } catch (error) {
-//     console.error("處理訊息時出錯:", error);
-//   } finally {
-//     if (client) {
-//       await client.close();
-//     }
-//   }
-
-//   console.log(JSON.stringify(req.body, null, 2));
-//   res.status(200).send("ok");
-// });
-
-// 修改 webhook 處理函數
 router.post("/webhook", async (req, res) => {
   const { entry } = req.body;
   let client;
@@ -136,10 +32,13 @@ router.post("/webhook", async (req, res) => {
 
     for (const item of entry) {
       try {
-        if (item.changes[0].value.messages && item.changes[0].value.messages.length > 0) {
+        if (
+          item.changes[0].value.messages &&
+          item.changes[0].value.messages.length > 0
+        ) {
           const messageObj = item.changes[0].value.messages[0];
-          
-          if (messageObj.type === 'text' && messageObj.text) {
+
+          if (messageObj.type === "text" && messageObj.text) {
             const textBody = messageObj.text.body;
             const sender = messageObj.from;
             const timestamp = messageObj.timestamp;
@@ -185,30 +84,7 @@ router.post("/webhook", async (req, res) => {
               .collection("chatHistory")
               .insertOne(messageRecord);
             console.log("訊息已保存到資料庫，ID:", result.insertedId);
-            
-            const io = req.app.get('io');
-            if (io) {
-              io.to(String(phoneNumber)).emit('new-message', {
-                roomId: String(phoneNumber),
-                message: {
-                  _id: result.insertedId.toString(),
-                  content: textBody,
-                  timestamp: formattedDateTime,
-                  senderId: "1", 
-                  sender: senderName,
-                  receiver: "浸會大學 SEE - 西貢/將軍澳社區",
-                  isSelf: false
-                }
-              });
-              
-              io.emit('message-notification', {
-                roomId: String(phoneNumber),
-                lastMessage: {
-                  content: textBody,
-                  timestamp: formattedDateTime
-                }
-              });
-            }
+
           }
         }
       } catch (error) {

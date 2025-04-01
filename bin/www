@@ -7,7 +7,6 @@
 var app = require("../app");
 var debug = require("debug")("backend:server");
 var http = require("http");
-const socketIo = require("socket.io");
 
 /**
  * Get port from environment and store in Express.
@@ -21,24 +20,6 @@ app.set("port", port);
  */
 
 var server = http.createServer(app);
-
-/**
- * Initialize Socket.IO.
- */
-
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  },
-});
-
-app.set("io", io);
-
-io.on("connection", (socket) => {
-  console.log("connection:", socket.id);
-});
 
 /**
  * Listen on provided port, on all network interfaces.
