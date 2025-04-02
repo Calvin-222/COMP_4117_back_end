@@ -133,4 +133,79 @@ router.put("/:phoneNo", async function (req, res, next) {
     await client.close();
   }
 });
+
+router.post("/create", async function (req, res, next) {
+  const userData = req.body;
+  let client;
+
+  try {
+    if (!userData.PHONE_NO) {
+      return res.status(400).json({
+        success: false,
+        message: "電話號碼為必填項",
+      });
+    }
+
+    client = await connectToDB();
+    const db = client.db("wts");
+
+    const phoneNo = userData.PHONE_NO;
+    const existingUser = await db
+      .collection("user")
+      .findOne({ "Phone Number": phoneNo });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "該電話號碼已存在",
+      });
+    }
+
+    // 準備用戶數據
+    const fieldMapping = {
+      PHONE_NO: "Phone Number",
+      CASE_CODE: "Case Code",
+      USERNAME: "Name",
+      UPDATED_FULL_NAME: "updated full name",
+      FIRST_NAME: "First NAME",
+      LAST_NAME: "LAST NAME",
+      ADDRESS: "Address",
+      STATUS: "Status",
+      ROLE: "Role",
+      TITLE: "Title",
+    };
+
+    const newUserData = {};
+
+    for (const [standardField, value] of Object.entries(userData)) {
+      const dbField = fieldMapping[standardField];
+      if (dbField) {
+        newUserData[dbField] = value;
+      }
+    }
+
+    newUserData.createdAt = new Date();
+
+    const result = await db.collection("user").insertOne(newUserData);
+
+    res.status(201).json({
+      success: true,
+      message: "用戶創建成功",
+      data: {
+        _id: result.insertedId,
+        ...newUserData,
+      },
+    });
+  } catch (error) {
+    console.error("創建用戶錯誤:", error);
+    res.status(500).json({
+      success: false,
+      message: "創建用戶錯誤: " + error.message,
+    });
+  } finally {
+    if (client) {
+      await client.close();
+    }
+  }
+});
 module.exports = router;
